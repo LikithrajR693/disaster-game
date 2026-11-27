@@ -30,6 +30,8 @@ var is_shaking: bool = false
 var shake_intensity: float = 0.0
 var camera_trauma: float = 0.0
 var camera_shake_clock: float = 0.0
+var camera_impulse_offset: Vector2 = Vector2.ZERO
+var camera_impulse_velocity: Vector2 = Vector2.ZERO
 var evacuation_active: bool = false
 var mission_ended: bool = false
 
@@ -62,7 +64,7 @@ func _setup_player() -> void:
 	camera = Camera2D.new()
 	camera.enabled = true
 	camera.position_smoothing_enabled = true
-	camera.position_smoothing_speed = 6.0
+	camera.position_smoothing_speed = GameConfig.CAMERA_SMOOTHING_SPEED
 	camera.limit_left = 0
 	camera.limit_top = 0
 	camera.limit_right = 2400
@@ -131,14 +133,21 @@ func _physics_process(delta: float) -> void:
 			hud.hide_prompt()
 			
 	camera_shake_clock += delta
-	camera_trauma = maxf(0.0, camera_trauma - delta * (0.32 if is_shaking else 0.58))
+	camera_trauma = maxf(0.0, camera_trauma - delta * (GameConfig.EARTHQUAKE_SHAKE_TRAUMA_DECAY if is_shaking else GameConfig.CAMERA_TRAUMA_DECAY))
 	if is_instance_valid(camera):
+		var look_ahead := player.facing_direction.normalized() * GameConfig.CAMERA_LOOK_AHEAD if player.velocity.length_squared() > 1.0 else Vector2.ZERO
+		camera.position = camera.position.lerp(look_ahead, 1.0 - exp(-GameConfig.CAMERA_LOOK_DAMPING * delta))
+		var spring_frequency := GameConfig.CAMERA_IMPULSE_SPRING
+		var spring_acceleration := -camera_impulse_offset * spring_frequency * spring_frequency
+		spring_acceleration -= 2.0 * GameConfig.CAMERA_IMPULSE_DAMPING * spring_frequency * camera_impulse_velocity
+		camera_impulse_velocity += spring_acceleration * delta
+		camera_impulse_offset += camera_impulse_velocity * delta
 		var shake_scale := (camera_trauma * (shake_intensity if is_shaking else 6.0)) if Campaign.screen_shake_enabled else 0.0
 		camera.offset = Vector2(
-			sin(camera_shake_clock * 31.0) * shake_scale,
-			cos(camera_shake_clock * 27.0) * shake_scale
-		)
-		camera.rotation = sin(camera_shake_clock * 18.0) * camera_trauma * (0.012 if Campaign.screen_shake_enabled else 0.0)
+			sin(camera_shake_clock * GameConfig.CAMERA_SHAKE_X_FREQUENCY) * shake_scale,
+			cos(camera_shake_clock * GameConfig.CAMERA_SHAKE_Y_FREQUENCY) * shake_scale
+		) + camera_impulse_offset
+		camera.rotation = sin(camera_shake_clock * GameConfig.CAMERA_SHAKE_ROTATION_FREQUENCY) * camera_trauma * (0.012 if Campaign.screen_shake_enabled else 0.0)
 
 	# Earthquake screen-shake duration
 	if is_shaking and shaking_timer > 0.0:
@@ -442,7 +451,7 @@ func _show_decision(title: String, prompt: String, options: Array[Dictionary], o
 
 func _start_earthquake_shaking(safe_choice: bool) -> void:
 	is_shaking = true
-	shaking_timer = 6.0
+	shaking_timer = GameConfig.EARTHQUAKE_SHAKE_DURATION
 	shake_intensity = 8.0
 	camera_trauma = 1.0
 	player.can_move = false
@@ -466,6 +475,8 @@ func _end_earthquake_shaking() -> void:
 func _on_player_interaction(target: Node2D) -> void:
 	if not evacuation_active or not player.can_move or Campaign.modal_active:
 		return
+
+	camera_impulse_velocity -= player.global_position.direction_to(target.global_position) * GameConfig.CAMERA_IMPULSE_STRENGTH
 		
 	if target is Hazard:
 		if not target.inspected:
@@ -578,7 +589,7 @@ func _complete_mission(passed: bool) -> void:
 func _on_continue_campaign() -> void:
 	if mission_id < 2:
 		Campaign.mission_id = mission_id + 1
-		get_tree().reload_current_scene()
+		SceneTransition.reload_scene()
 	else:
 		# Show Campaign Final Report
 		var rep := CampaignReport.new()
@@ -588,17 +599,17 @@ func _on_continue_campaign() -> void:
 func _on_replay_mission() -> void:
 	get_tree().paused = false
 	Campaign.modal_active = false
-	get_tree().reload_current_scene()
+	SceneTransition.reload_scene()
 
 func _on_restart_requested() -> void:
 	get_tree().paused = false
 	Campaign.modal_active = false
-	get_tree().reload_current_scene()
+	SceneTransition.reload_scene()
 
 func _on_return_to_menu() -> void:
 	get_tree().paused = false
 	Campaign.modal_active = false
-	get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
+	SceneTransition.change_scene("res://scenes/main_menu.tscn")
 
 func _on_pause_toggled(_p: bool) -> void:
 	player.can_move = not _p and evacuation_active and not is_shaking and not mission_ended

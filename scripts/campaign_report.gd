@@ -149,11 +149,12 @@ func _build_ui() -> void:
 		closed.emit()
 		queue_free()
 	)
+	UIFeedback.attach(btn, Color("#F4B860"), false)
 	panel.add_child(btn)
 	btn.grab_focus()
 
 func _input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
+	if event.is_action_pressed("ui_cancel"):
 		Campaign.modal_active = false
 		SoundManager.play_sfx("click")
 		closed.emit()

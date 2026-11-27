@@ -20,8 +20,12 @@ config/features=PackedStringArray("4.4")
 
 [autoload]
 
+GameConfig="*res://scripts/game_config.gd"
+InputSetup="*res://scripts/input_setup.gd"
 Campaign="*res://scripts/campaign.gd"
 SoundManager="*res://scripts/SoundManager.gd"
+FeedbackManager="*res://scripts/feedback_manager.gd"
+SceneTransition="*res://scripts/scene_transition.gd"
 
 [display]
 

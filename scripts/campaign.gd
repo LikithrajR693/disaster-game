@@ -14,18 +14,28 @@ var reports: Dictionary = {}
 # Settings State
 var sound_enabled: bool = true:
 	set(val):
+		if sound_enabled == val:
+			return
 		sound_enabled = val
 		SoundManager.sound_enabled = val
 		settings_changed.emit()
+		_save_settings()
 var sfx_volume: float = 0.8: # 0.0 to 1.0
 	set(val):
-		sfx_volume = clampf(val, 0.0, 1.0)
+		var clamped_volume := clampf(val, 0.0, 1.0)
+		if is_equal_approx(sfx_volume, clamped_volume):
+			return
+		sfx_volume = clamped_volume
 		SoundManager.set_master_volume(sfx_volume)
 		settings_changed.emit()
+		_save_settings()
 var screen_shake_enabled: bool = true: # Full or Reduced
 	set(val):
+		if screen_shake_enabled == val:
+			return
 		screen_shake_enabled = val
 		settings_changed.emit()
+		_save_settings()
 
 var tactical_scan_active: bool = false
 var modal_active: bool = false
@@ -74,6 +84,31 @@ const MISSION_METADATA: Array[Dictionary] = [
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	var settings := ConfigFile.new()
+	var load_result := settings.load("user://settings.cfg")
+	if load_result == ERR_FILE_NOT_FOUND:
+		return
+	if load_result != OK:
+		push_error("Unable to load saved settings: %s" % error_string(load_result))
+		return
+	var saved_sound: Variant = settings.get_value("audio", "enabled", sound_enabled)
+	if typeof(saved_sound) == TYPE_BOOL:
+		sound_enabled = saved_sound
+	var saved_volume: Variant = settings.get_value("audio", "volume", sfx_volume)
+	if typeof(saved_volume) == TYPE_FLOAT or typeof(saved_volume) == TYPE_INT:
+		sfx_volume = float(saved_volume)
+	var saved_shake: Variant = settings.get_value("accessibility", "screen_shake", screen_shake_enabled)
+	if typeof(saved_shake) == TYPE_BOOL:
+		screen_shake_enabled = saved_shake
+
+func _save_settings() -> void:
+	var settings := ConfigFile.new()
+	settings.set_value("audio", "enabled", sound_enabled)
+	settings.set_value("audio", "volume", sfx_volume)
+	settings.set_value("accessibility", "screen_shake", screen_shake_enabled)
+	var save_result := settings.save("user://settings.cfg")
+	if save_result != OK:
+		push_error("Unable to save settings: %s" % error_string(save_result))
 
 func reset_campaign() -> void:
 	mission_id = 0

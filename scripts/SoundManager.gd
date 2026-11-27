@@ -10,7 +10,6 @@ extends Node
 const SFX_SR: int = 32000
 const AMB_SR: float = 22050.0
 const MAX_VOICES: int = 24
-const PITCH_JITTER: float = 0.08
 const VARIANTS: int = 3
 
 var sound_enabled: bool = true:
@@ -25,6 +24,8 @@ var master_volume: float = 0.8:
 var _ambience_player: AudioStreamPlayer
 var _playback: AudioStreamGeneratorPlayback
 var _ambience_time: float = 0.0
+var _ambience_gain: float = 1.0
+var _ambience_lowpass: float = 0.0
 var _pink_b0: float = 0.0
 var _pink_b1: float = 0.0
 var _pink_b2: float = 0.0
@@ -66,6 +67,10 @@ func _setup_ambience_generator() -> void:
 
 func _process(delta: float) -> void:
 	_ambience_time += delta
+	var mix_delta := delta / maxf(Engine.time_scale, 0.001)
+	var ducked := get_tree().paused or Engine.time_scale < 0.5
+	var target_gain := GameConfig.AMBIENCE_PAUSE_GAIN if ducked else 1.0
+	_ambience_gain = lerpf(_ambience_gain, target_gain, minf(mix_delta * 12.0, 1.0))
 	_proximity_electric_gain = lerpf(_proximity_electric_gain, _target_electric_gain, minf(delta * 6.0, 1.0))
 	_proximity_water_gain = lerpf(_proximity_water_gain, _target_water_gain, minf(delta * 6.0, 1.0))
 	_feed_ambience_buffer()
@@ -77,6 +82,9 @@ func _feed_ambience_buffer() -> void:
 	if frames <= 0:
 		return
 	var dt := 1.0 / AMB_SR
+	var ducked := get_tree().paused or Engine.time_scale < 0.5
+	var cutoff := GameConfig.AMBIENCE_DUCKED_CUTOFF if ducked else GameConfig.AMBIENCE_NORMAL_CUTOFF
+	var lowpass_alpha := 1.0 - exp(-TAU * cutoff / AMB_SR)
 	var lfo := 0.5 + 0.5 * sin(_ambience_time * TAU * 0.12 + 1.3 * sin(_ambience_time * 0.31))
 	var cutoff := lerpf(350.0, 900.0, lfo)
 	var svf_f := 2.0 * sin(PI * cutoff / AMB_SR)
@@ -121,9 +129,13 @@ func _feed_ambience_buffer() -> void:
 			_water_mod = lerpf(_water_mod, randf(), 0.0008)
 			_water_lp += 0.12 * (pink * 2.0 - _water_lp)
 			water = (_water_lp * (0.4 + 1.2 * _water_mod) + pink * 0.25 * _water_mod * _water_mod) * w_gain * 0.9
-		var mono := rain + electric + water
-		var left := clampf(mono + _siren_lp * (1.0 - siren_pan) * 1.4, -0.95, 0.95)
-		var right := clampf(mono + _siren_lp * siren_pan * 1.4, -0.95, 0.95)
+		var mono := (rain + electric + water) * _ambience_gain
+		_ambience_lowpass += lowpass_alpha * (mono - _ambience_lowpass)
+		if ducked:
+			mono = _ambience_lowpass
+		var siren_gain := GameConfig.AMBIENCE_PAUSE_GAIN if ducked else 1.0
+		var left := clampf(mono + _siren_lp * siren_gain * (1.0 - siren_pan) * 1.4, -0.95, 0.95)
+		var right := clampf(mono + _siren_lp * siren_gain * siren_pan * 1.4, -0.95, 0.95)
 		_playback.push_frame(Vector2(left, right))
 
 func update_hazard_proximity(closest_dist: float, hazard_type: String) -> void:
@@ -253,8 +265,8 @@ func _play_one_shot(stream: AudioStreamWAV, volume_db: float = 0.0) -> void:
 	p.process_mode = Node.PROCESS_MODE_ALWAYS
 	p.stream = stream
 	p.bus = "Master"
-	p.volume_db = volume_db
-	p.pitch_scale = randf_range(1.0 - PITCH_JITTER, 1.0 + PITCH_JITTER)
+	p.volume_db = volume_db + randf_range(-GameConfig.AUDIO_GAIN_JITTER_DB, GameConfig.AUDIO_GAIN_JITTER_DB)
+	p.pitch_scale = randf_range(1.0 - GameConfig.AUDIO_PITCH_JITTER, 1.0 + GameConfig.AUDIO_PITCH_JITTER)
 	_voices += 1
 	p.finished.connect(_on_voice_finished.bind(p))
 	add_child(p)

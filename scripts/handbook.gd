@@ -142,6 +142,7 @@ func _build_ui() -> void:
 		btn.custom_minimum_size = Vector2(248, 45)
 		var idx := i
 		btn.pressed.connect(func(): _switch_tab(idx))
+		UIFeedback.attach(btn, Color("#F4B860"), false)
 		tabs_box.add_child(btn)
 		tab_buttons.append(btn)
 		
@@ -175,13 +176,14 @@ func _build_ui() -> void:
 		closed.emit()
 		queue_free()
 	)
+	UIFeedback.attach(close_btn, Color("#F4B860"), false)
 	panel.add_child(close_btn)
 	close_btn.grab_focus()
 	
 	_switch_tab(0)
 
 func _input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
+	if event.is_action_pressed("ui_cancel"):
 		Campaign.modal_active = false
 		SoundManager.play_sfx("click")
 		closed.emit()

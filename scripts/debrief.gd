@@ -136,11 +136,19 @@ func _build_ui() -> void:
 	panel.add_child(stats_box)
 	
 	var stats_txt := Label.new()
-	stats_txt.text = "• Hazards Neutralized & Barricaded: %d/3\n• Residents Evacuated to Safety: %d/2\n• Essential Disaster Supplies Secured: %d/2\n• Evacuation Status: %s" % [
+	var decisions: Array = report_data.get("decisions", [])
+	var safe_decisions := 0
+	for decision in decisions:
+		if decision.get("safe", false):
+			safe_decisions += 1
+	var decision_accuracy := "%d%%" % int(round(float(safe_decisions) / float(decisions.size()) * 100.0)) if not decisions.is_empty() else "N/A"
+	stats_txt.text = "• Hazards Neutralized & Barricaded: %d/3\n• Residents Evacuated to Safety: %d/2\n• Essential Disaster Supplies Secured: %d/2\n• Safe Emergency Decisions: %d/%d (%s)" % [
 		report_data.get("hazards", 0),
 		report_data.get("residents", 0),
 		report_data.get("supplies", 0),
-		"ALL OBJECTIVES SECURED" if passed else "PARTIAL CASUALTIES / INCOMPLETE"
+		safe_decisions,
+		decisions.size(),
+		decision_accuracy
 	]
 	stats_txt.position = Vector2(16, 10)
 	stats_txt.size = Vector2(500, 75)
@@ -179,7 +187,6 @@ func _build_ui() -> void:
 	log_box.add_child(log_label)
 	
 	var log_lines := ""
-	var decisions: Array = report_data.get("decisions", [])
 	for d in decisions:
 		var safe: bool = d.get("safe", true)
 		if safe:
@@ -239,6 +246,7 @@ func _build_ui() -> void:
 		var is_cor: bool = opt.get("correct", false)
 		var exp: String = q_data.get("explanation", "")
 		btn.pressed.connect(func(): _on_quiz_answered(is_cor, exp))
+		UIFeedback.attach(btn)
 		quiz_box.add_child(btn)
 		
 	quiz_feedback_label = Label.new()
@@ -265,10 +273,11 @@ func _build_ui() -> void:
 		continue_requested.emit()
 		queue_free()
 	)
+	UIFeedback.attach(cont_btn, Color("#F4B860"), false)
 	nav_box.add_child(cont_btn)
 	
 	var rep_btn := Button.new()
-	rep_btn.text = "REPLAY MISSION"
+	rep_btn.text = "REPLAY MISSION" if report_data.get("passed", false) else "RETRY MISSION"
 	rep_btn.custom_minimum_size = Vector2(220, 50)
 	rep_btn.pressed.connect(func():
 		Campaign.modal_active = false
@@ -276,6 +285,7 @@ func _build_ui() -> void:
 		replay_requested.emit()
 		queue_free()
 	)
+	UIFeedback.attach(rep_btn, Color("#F4B860"), false)
 	nav_box.add_child(rep_btn)
 	
 	var menu_btn := Button.new()
@@ -287,6 +297,7 @@ func _build_ui() -> void:
 		menu_requested.emit()
 		queue_free()
 	)
+	UIFeedback.attach(menu_btn, Color("#F4B860"), false)
 	nav_box.add_child(menu_btn)
 	cont_btn.grab_focus()
 

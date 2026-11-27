@@ -179,7 +179,7 @@ func _build_ui() -> void:
 	var control_hint := Label.new()
 	control_hint.position = Vector2(84, 624)
 	control_hint.size = Vector2(700, 22)
-	control_hint.text = "ARROW KEYS  NAVIGATE     •     ENTER  SELECT     •     ESC  BACK"
+	control_hint.text = "ARROWS / LEFT STICK  NAVIGATE  •  ENTER / A  SELECT  •  ESC / B  BACK"
 	control_hint.add_theme_font_size_override("font_size", 11)
 	control_hint.add_theme_color_override("font_color", Color("#81949E"))
 	add_child(control_hint)
@@ -263,9 +263,8 @@ func _create_tactical_button(parent: Node, text: String, callback: Callable) -> 
 	btn.add_theme_color_override("font_hover_color", Color("#111C22") if is_primary else Color("#F4B860"))
 	btn.add_theme_color_override("font_focus_color", Color("#111C22") if is_primary else Color("#F4B860"))
 	
-	btn.mouse_entered.connect(func(): SoundManager.play_ui_hover())
+	UIFeedback.attach(btn, Color("#E8C66A"))
 	btn.pressed.connect(func():
-		SoundManager.play_ui_click()
 		callback.call()
 	)
 	parent.add_child(btn)
@@ -367,7 +366,7 @@ func _draw_vignette(node: Control) -> void:
 
 func _on_new_campaign() -> void:
 	Campaign.reset_campaign()
-	get_tree().change_scene_to_file("res://scenes/mission.tscn")
+	SceneTransition.change_scene("res://scenes/mission.tscn")
 
 func _on_mission_select() -> void:
 	_open_mission_select_modal()
@@ -480,13 +479,13 @@ func _open_mission_select_modal() -> void:
 		btn_vbox.add_child(act_sub)
 		
 		var idx: int = meta["id"]
-		act_btn.mouse_entered.connect(SoundManager.play_ui_hover)
+		UIFeedback.attach(act_btn, meta["color"], false)
 		act_btn.pressed.connect(func():
 			SoundManager.play_ui_click()
 			Campaign.mission_id = idx
 			layer.queue_free()
 			active_modal_layer = null
-			get_tree().change_scene_to_file("res://scenes/mission.tscn")
+			SceneTransition.change_scene("res://scenes/mission.tscn")
 		)
 		vbox.add_child(act_btn)
 		
@@ -499,6 +498,7 @@ func _open_mission_select_modal() -> void:
 		layer.queue_free()
 		active_modal_layer = null
 	)
+	UIFeedback.attach(back_btn, Color("#F4B860"), false)
 	card.add_child(back_btn)
 	back_btn.grab_focus()
 
@@ -610,6 +610,7 @@ func _open_settings_modal() -> void:
 		shake_btn.text = "FULL (INTENSE)" if Campaign.screen_shake_enabled else "REDUCED (ACCESSIBILITY)"
 		SoundManager.play_ui_click()
 	)
+	UIFeedback.attach(shake_btn, Color("#F4B860"), false)
 	shake_row.add_child(shake_btn)
 	
 	# Tactical Controls Cheatsheet
@@ -646,11 +647,12 @@ func _open_settings_modal() -> void:
 		layer.queue_free()
 		active_modal_layer = null
 	)
+	UIFeedback.attach(close_btn, Color("#F4B860"), false)
 	card.add_child(close_btn)
 	close_btn.grab_focus()
 
 func _unhandled_input(event: InputEvent) -> void:
-	if active_modal_layer != null and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
+	if active_modal_layer != null and event.is_action_pressed("ui_cancel"):
 		SoundManager.play_ui_click()
 		active_modal_layer.queue_free()
 		active_modal_layer = null

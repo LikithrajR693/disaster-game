@@ -31,7 +31,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if facing_direction.length_squared() > 0.01:
 		var target_angle := facing_direction.angle()
-		smooth_facing_angle = lerp_angle(smooth_facing_angle, target_angle, 14.0 * delta)
+		smooth_facing_angle = lerp_angle(smooth_facing_angle, target_angle, 1.0 - exp(-14.0 * delta))
 	headlamp.position = Vector2(cos(smooth_facing_angle), sin(smooth_facing_angle)) * 52.0
 	headlamp.rotation = smooth_facing_angle
 	queue_redraw()
@@ -53,12 +53,13 @@ func _draw() -> void:
 
 	# 2. Ground Tactical Ring (Interaction reach indicator)
 	var ring_pulse := (sin(walk_anim_time * 2.0) + 1.0) * 0.5
+	var ring_radius := GameConfig.PLAYER_INTERACTION_RADIUS
 	var ring_color := Color(0.2, 0.85, 0.95, 0.22 + ring_pulse * 0.12) if not Campaign.tactical_scan_active else Color(0.95, 0.72, 0.3, 0.35 + ring_pulse * 0.15)
-	draw_arc(Vector2.ZERO, interaction_radius, 0, TAU, 36, ring_color, 1.5)
+	draw_arc(Vector2.ZERO, ring_radius, 0, TAU, 36, ring_color, 1.5)
 	# 4 compass crosshair ticks on tactical ring
 	for a in [0.0, PI * 0.5, PI, PI * 1.5]:
 		var tick_dir := Vector2(cos(a), sin(a))
-		draw_line(tick_dir * (interaction_radius - 4), tick_dir * (interaction_radius + 4), ring_color, 1.5)
+		draw_line(tick_dir * (ring_radius - 4), tick_dir * (ring_radius + 4), ring_color, 1.5)
 
 	# 3. Dynamic Volumetric Flashlight Cone (Layered soft-edged warm-white beam)
 	var cone_len := 155.0
@@ -91,7 +92,11 @@ func _draw() -> void:
 	var sway := sin(walk_anim_time) * 0.12 if is_moving else 0.0
 
 	# Transform for rotated body rendering
-	var xform := Transform2D(smooth_facing_angle + sway, Vector2(0, bob))
+	var stretch := Vector2.ONE
+	if is_moving:
+		var stride := absf(cos(walk_anim_time))
+		stretch = Vector2(1.0 + stride * 0.025, 1.0 - stride * 0.035)
+	var xform := Transform2D(smooth_facing_angle + sway, stretch, 0.0, Vector2(0, bob))
 
 	# Tactical backpack rig (behind torso)
 	var bp_rect := Rect2(-10, -7, 7, 14)

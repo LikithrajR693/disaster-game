@@ -19,6 +19,7 @@ A complete offline 2D disaster-preparedness simulation set in the fictional Indi
 - `J`: mission objectives
 - `ESC`: pause (or close a non-critical information panel)
 - Mouse: menus and decisions
+- Gamepad: left stick to move, A to interact/select, X for inventory, Y for map, Back for objectives, Start to pause, and B/Escape to close menus.
 
 During a critical emergency decision, use **Up/Down** to navigate, **Enter** to choose, or **1**, **2**, and **3** to select an option directly. **Escape cannot discard an unanswered emergency decision.**
 
@@ -29,6 +30,12 @@ During a critical emergency decision, use **Up/Down** to navigate, **Enter** to 
 3. **The Last Exit:** activate the alarm, use stairs, avoid smoke and elevators, and account for residents.
 
 The project uses only Godot built-in nodes and procedural graphics. No assets, APIs or internet access are required.
+
+## Feel and feedback tuning
+
+Shared gameplay and presentation values live in `scripts/game_config.gd` (autoloaded as `GameConfig`). Movement speed/acceleration, escort spacing, camera damping and shake, interaction hit-stop, particle bursts, score popups, UI motion, audio variation, and pause ambience are tuned there. Audio and screen-shake preferences are saved locally in `user://settings.cfg`.
+
+Interaction feedback is owned by `FeedbackManager`: short overlapping hit-stop requests are safely coalesced, and temporary particles, score callouts, and screen flashes are released automatically. `UIFeedback` provides the shared keyboard, mouse, and focus response for interactive controls. The procedural `SoundManager` adds light pitch/gain variation and ducks/filters ambience during pause and hit-stop without muting menu feedback.
 
 ## Disaster atmosphere
 

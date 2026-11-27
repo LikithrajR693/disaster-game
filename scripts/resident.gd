@@ -17,8 +17,8 @@ enum State { WAITING, FOLLOWING, SAFE }
 
 var current_state: State = State.WAITING
 var target_to_follow: Node2D = null
-var follow_distance: float = 55.0
-var move_speed: float = 190.0
+var follow_distance: float = GameConfig.RESIDENT_FOLLOW_DISTANCE
+var move_speed: float = GameConfig.RESIDENT_MOVE_SPEED
 var walk_anim_time: float = 0.0
 var player_in_range: bool = false
 
@@ -64,7 +64,8 @@ func _physics_process(delta: float) -> void:
 				var dist := global_position.distance_to(target_to_follow.global_position)
 				if dist > follow_distance:
 					var dir := (target_to_follow.global_position - global_position).normalized()
-					velocity = dir * move_speed
+					var follow_speed := minf(move_speed, (dist - follow_distance) / maxf(delta, 0.0001))
+					velocity = dir * follow_speed
 					walk_anim_time += delta * 8.0
 					move_and_slide()
 				else:
@@ -144,6 +145,8 @@ func mark_safe() -> void:
 	if current_state == State.FOLLOWING:
 		current_state = State.SAFE
 		target_to_follow = null
+		FeedbackManager.impact(global_position, Color("#86D7B3"), velocity, true)
+		FeedbackManager.show_score_popup(global_position, "+500  RESCUED", Color("#86D7B3"))
 		SoundManager.play_sfx("success")
 		resident_reached_safety.emit({
 			"name": resident_name,

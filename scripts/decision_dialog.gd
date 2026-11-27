@@ -103,8 +103,7 @@ func setup(title: String, situation: String, options: Array[Dictionary]) -> void
 		btn.add_theme_font_size_override("font_size", 15)
 		var opt_data := opt
 		btn.pressed.connect(func(): _on_option_chosen(opt_data))
-		btn.pressed.connect(SoundManager.play_ui_click)
-		btn.mouse_entered.connect(SoundManager.play_ui_click)
+		UIFeedback.attach(btn)
 		vbox.add_child(btn)
 		option_buttons.append(btn)
 
@@ -128,25 +127,20 @@ func _input(event: InputEvent) -> void:
 			var step := -1 if key_event.keycode == KEY_UP else 1
 			selected_option_index = posmod(selected_option_index + step, option_buttons.size())
 			option_buttons[selected_option_index].grab_focus()
-			SoundManager.play_ui_click()
 			get_viewport().set_input_as_handled()
 		return
 
 	if key_event.keycode in [KEY_1, KEY_KP_1] and option_buttons.size() >= 1:
-		SoundManager.play_ui_click()
 		option_buttons[0].emit_signal("pressed")
 		get_viewport().set_input_as_handled()
 	elif key_event.keycode in [KEY_2, KEY_KP_2] and option_buttons.size() >= 2:
-		SoundManager.play_ui_click()
 		option_buttons[1].emit_signal("pressed")
 		get_viewport().set_input_as_handled()
 	elif key_event.keycode in [KEY_3, KEY_KP_3] and option_buttons.size() >= 3:
-		SoundManager.play_ui_click()
 		option_buttons[2].emit_signal("pressed")
 		get_viewport().set_input_as_handled()
 	elif key_event.keycode == KEY_ENTER or key_event.keycode == KEY_KP_ENTER:
 		if not option_buttons.is_empty():
-			SoundManager.play_ui_click()
 			option_buttons[selected_option_index].emit_signal("pressed")
 			get_viewport().set_input_as_handled()
 
@@ -218,7 +212,7 @@ func _on_option_chosen(option: Dictionary) -> void:
 	cont_btn.size = Vector2(280, 50)
 	cont_btn.pressed.connect(_proceed)
 	cont_btn.pressed.connect(SoundManager.play_ui_click)
-	cont_btn.mouse_entered.connect(SoundManager.play_ui_click)
+	UIFeedback.attach(cont_btn, Color("#E8C66A"), false)
 	card.add_child(cont_btn)
 	cont_btn.grab_focus()
 

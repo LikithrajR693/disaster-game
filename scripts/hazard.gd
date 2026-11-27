@@ -111,7 +111,7 @@ func _process(delta: float) -> void:
 		if _arc_light != null:
 			_arc_light.energy = 1.65 if _flash_time > 0.0 else 0.0
 		if _arc_timer <= 0.0:
-			_arc_timer = _random.randf_range(1.5, 2.5)
+			_arc_timer = _random.randf_range(GameConfig.ELECTRICAL_ARC_INTERVAL_MIN, GameConfig.ELECTRICAL_ARC_INTERVAL_MAX)
 			_flash_time = 0.11
 			_spark_particles.emitting = true
 			_spark_particles.restart()
@@ -193,6 +193,8 @@ func _draw() -> void:
 func inspect_hazard() -> Dictionary:
 	if not inspected:
 		inspected = true
+		FeedbackManager.impact(global_position, Color("#E8C66A"), Vector2.ZERO, true)
+		FeedbackManager.show_score_popup(global_position, "+250  HAZARD SECURED", Color("#E8C66A"))
 		SoundManager.play_barricade_success()
 		var data := {
 			"id": hazard_id,

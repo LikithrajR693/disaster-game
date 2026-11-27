@@ -94,6 +94,8 @@ func _draw() -> void:
 		draw_string(ThemeDB.fallback_font, Vector2(-pill_w * 0.5, pos.y - 19), item_name, HORIZONTAL_ALIGNMENT_CENTER, pill_w, 10, Color("#F4B860"))
 
 func collect() -> Dictionary:
+	FeedbackManager.impact(global_position, Color("#65D7CC"))
+	FeedbackManager.show_score_popup(global_position, "+200  SUPPLY", Color("#65D7CC"))
 	SoundManager.play_pickup()
 	var data := {
 		"id": item_id,

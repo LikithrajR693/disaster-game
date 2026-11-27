@@ -6,9 +6,6 @@ class_name PlayerController
 
 signal interaction_requested(target: Node2D)
 
-const MOVE_SPEED: float = 230.0
-const FOOTSTEP_INTERVAL: float = 0.32
-
 var can_move: bool = true
 var facing_direction: Vector2 = Vector2.DOWN
 var walk_anim_time: float = 0.0
@@ -28,7 +25,7 @@ func _ready() -> void:
 	# Body collider
 	var body_shape := CollisionShape2D.new()
 	var circle := CircleShape2D.new()
-	circle.radius = 18.0
+	circle.radius = GameConfig.PLAYER_BODY_RADIUS
 	body_shape.shape = circle
 	add_child(body_shape)
 	
@@ -39,7 +36,7 @@ func _ready() -> void:
 	interaction_detector.collision_mask = 2 | 4 | 8 # Hazards (2), Supplies (4), Residents (8)
 	var int_shape := CollisionShape2D.new()
 	var int_circle := CircleShape2D.new()
-	int_circle.radius = 65.0
+	int_circle.radius = GameConfig.PLAYER_INTERACTION_RADIUS
 	int_shape.shape = int_circle
 	interaction_detector.add_child(int_shape)
 	interaction_detector.area_entered.connect(_on_area_entered)
@@ -54,23 +51,26 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if not can_move or Campaign.modal_active:
 		velocity = Vector2.ZERO
-		move_and_slide()
 		if is_instance_valid(visuals):
 			visuals.is_moving = false
+		move_and_slide()
 		return
 		
 	var input_vec := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	if input_vec.length_squared() > 0.0:
 		facing_direction = input_vec
-		velocity = input_vec * MOVE_SPEED
+
+	velocity = velocity.move_toward(input_vec * GameConfig.PLAYER_MOVE_SPEED, GameConfig.PLAYER_ACCELERATION * delta)
+	var is_moving := velocity.length_squared() > 1.0
+	if is_moving:
 		walk_anim_time += delta * 10.0
-		
+
 		# Record breadcrumbs for escort train
 		if breadcrumbs.is_empty() or breadcrumbs.back().distance_to(global_position) > 12.0:
 			breadcrumbs.append(global_position)
 			if breadcrumbs.size() > max_breadcrumbs:
 				breadcrumbs.pop_front()
-				
+
 		if is_instance_valid(visuals):
 			visuals.facing_direction = facing_direction
 			visuals.walk_anim_time = walk_anim_time
@@ -79,13 +79,13 @@ func _physics_process(delta: float) -> void:
 		if footstep_time_remaining <= 0.0:
 			var surface := _detect_surface()
 			SoundManager.play_footstep(surface)
-			footstep_time_remaining = FOOTSTEP_INTERVAL
+			footstep_time_remaining = GameConfig.PLAYER_FOOTSTEP_INTERVAL
 	else:
 		velocity = Vector2.ZERO
 		footstep_time_remaining = 0.0
 		if is_instance_valid(visuals):
 			visuals.is_moving = false
-		
+
 	move_and_slide()
 	
 	# Keep the entire player collider inside the map bounds.

@@ -64,6 +64,9 @@ var inventory_box: HBoxContainer
 var guide_arrow: Control
 var scan_btn: Button
 var mute_btn: Button
+var controls_hint: Label
+var _controls_hint_dismissed: bool = false
+var _score_tween: Tween
 
 var pause_overlay: CanvasLayer = null
 var active_modal_layer: CanvasLayer = null
@@ -76,12 +79,15 @@ func _ready() -> void:
 	_build_ui()
 
 func _input(event: InputEvent) -> void:
+	if not _controls_hint_dismissed and _is_hint_input(event):
+		_dismiss_controls_hint()
 	if not event is InputEventKey or not event.pressed or event.echo:
 		return
 	var key_event := event as InputEventKey
 	
 	# Mute shortcut
 	if key_event.keycode == KEY_M:
+		SoundManager.play_ui_click()
 		toggle_sound()
 		get_viewport().set_input_as_handled()
 		return
@@ -239,7 +245,6 @@ func _build_ui() -> void:
 	restart_btn.add_theme_font_size_override("font_size", 11)
 	_style_hud_button(restart_btn)
 	restart_btn.pressed.connect(func():
-		SoundManager.play_ui_click()
 		restart_requested.emit()
 	)
 	quick_bar.add_child(restart_btn)
@@ -250,7 +255,6 @@ func _build_ui() -> void:
 	pause_btn.add_theme_font_size_override("font_size", 11)
 	_style_hud_button(pause_btn, Color("#80D8FF"))
 	pause_btn.pressed.connect(func():
-		SoundManager.play_ui_click()
 		show_pause_menu()
 	)
 	quick_bar.add_child(pause_btn)
@@ -304,10 +308,10 @@ func _build_ui() -> void:
 	prompt_panel.add_child(prompt_label)
 	prompt_panel.visible = false
 
-	var controls_hint := Label.new()
+	controls_hint = Label.new()
 	controls_hint.position = Vector2(830, 654)
 	controls_hint.size = Vector2(420, 20)
-	controls_hint.text = "WASD MOVE   •   E INTERACT   •   J OBJECTIVES   •   ESC PAUSE"
+	controls_hint.text = "WASD/LS MOVE  •  E/A INTERACT  •  J/BACK OBJECTIVES  •  ESC/START PAUSE"
 	controls_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	controls_hint.add_theme_font_size_override("font_size", 9)
 	controls_hint.add_theme_color_override("font_color", Color("#81949E"))
@@ -323,7 +327,22 @@ func _build_ui() -> void:
 func toggle_sound() -> void:
 	Campaign.sound_enabled = !Campaign.sound_enabled
 	_update_mute_button_visual()
-	SoundManager.play_ui_click()
+
+func _is_hint_input(event: InputEvent) -> bool:
+	for action in [&"move_left", &"move_right", &"move_up", &"move_down", &"interact"]:
+		if event.is_action_pressed(action):
+			return true
+	return false
+
+func _dismiss_controls_hint() -> void:
+	_controls_hint_dismissed = true
+	if not is_instance_valid(controls_hint):
+		return
+	var tween := create_tween()
+	tween.set_trans(Tween.TRANS_CUBIC)
+	tween.set_ease(Tween.EASE_OUT)
+	tween.tween_property(controls_hint, "modulate:a", 0.0, 0.35)
+	tween.tween_callback(controls_hint.queue_free)
 
 func _style_hud_button(button: Button, accent: Color = Color("#D7AA57")) -> void:
 	var normal := StyleBoxFlat.new()
@@ -347,6 +366,7 @@ func _style_hud_button(button: Button, accent: Color = Color("#D7AA57")) -> void
 	button.add_theme_color_override("font_color", Color("#C7D3D9"))
 	button.add_theme_color_override("font_hover_color", accent)
 	button.add_theme_color_override("font_focus_color", accent)
+	UIFeedback.attach(button, accent)
 
 func _update_mute_button_visual() -> void:
 	if is_instance_valid(mute_btn):
@@ -403,9 +423,19 @@ func update_counters(hazards: int, req_hazards: int, residents: int, req_residen
 	obj_residents_label.add_theme_color_override("font_color", Color("#86D7B3") if residents >= req_residents else Color("#C7D3D9"))
 
 func update_score_display(sc: int) -> void:
+	var previous_score := current_score
 	current_score = sc
 	if is_instance_valid(score_label):
-		score_label.text = "SCORE  %d" % sc
+		if is_instance_valid(_score_tween) and _score_tween.is_running():
+			_score_tween.kill()
+		_score_tween = create_tween()
+		_score_tween.set_trans(Tween.TRANS_CUBIC)
+		_score_tween.set_ease(Tween.EASE_OUT)
+		_score_tween.tween_method(_set_animated_score, float(previous_score), float(sc), 0.28)
+
+func _set_animated_score(value: float) -> void:
+	if is_instance_valid(score_label):
+		score_label.text = "SCORE  %d" % int(round(value))
 
 func add_supply_item(item: Dictionary) -> void:
 	supplies.append(item)
@@ -601,7 +631,7 @@ func _add_pause_btn(parent: Node, text: String, callback: Callable) -> Button:
 	btn.add_theme_stylebox_override("focus", hov)
 	btn.add_theme_color_override("font_hover_color", Color("#F4B860"))
 	
-	btn.mouse_entered.connect(SoundManager.play_ui_hover)
+	UIFeedback.attach(btn, Color("#F4B860"), false)
 	btn.pressed.connect(func():
 		SoundManager.play_ui_click()
 		callback.call()
@@ -650,6 +680,7 @@ func _show_in_game_settings(parent: Node) -> void:
 		toggle_sound()
 		a_btn.text = "ENABLED" if Campaign.sound_enabled else "MUTED"
 	)
+	UIFeedback.attach(a_btn)
 	a_row.add_child(a_btn)
 	
 	# Screen Shake Toggle
@@ -667,6 +698,7 @@ func _show_in_game_settings(parent: Node) -> void:
 		sh_btn.text = "FULL" if Campaign.screen_shake_enabled else "REDUCED"
 		SoundManager.play_ui_click()
 	)
+	UIFeedback.attach(sh_btn, Color("#F4B860"), false)
 	sh_row.add_child(sh_btn)
 	
 	# Controls quick list
@@ -681,7 +713,7 @@ func _show_in_game_settings(parent: Node) -> void:
 	svbox.add_child(c_box)
 	
 	var c_txt := Label.new()
-	c_txt.text = "TACTICAL CONTROLS:\n\n• WASD : 8-Way Movement\n• [E] : Inspect Hazard / Escort Civilian\n• [TAB] : Tactical Radar Scan\n• [1]-[4] : Quick Go-Bag Slots\n• [M] : Quick Audio Mute\n• [ESC] : Pause / Resume"
+	c_txt.text = "TACTICAL CONTROLS:\n\n• WASD / LEFT STICK : 8-Way Movement\n• [E] / [A] : Inspect Hazard / Escort Civilian\n• [TAB] : Tactical Radar Scan\n• [1]-[4] : Quick Go-Bag Slots\n• [M] : Quick Audio Mute\n• [ESC] / [START] : Pause / Resume"
 	c_txt.position = Vector2(16, 12)
 	c_txt.size = Vector2(468, 156)
 	c_txt.add_theme_font_size_override("font_size", 12)
@@ -696,6 +728,7 @@ func _show_in_game_settings(parent: Node) -> void:
 		SoundManager.play_ui_click()
 		set_panel.queue_free()
 	)
+	UIFeedback.attach(c_close, Color("#F4B860"), false)
 	set_panel.add_child(c_close)
 
 func hide_pause_menu() -> void:
@@ -814,6 +847,7 @@ func show_hazard_dossier(hazard_data: Dictionary, on_closed: Callable) -> void:
 		active_modal_layer = null
 		on_closed.call()
 	)
+	UIFeedback.attach(close_btn, Color("#F4B860"))
 	card.add_child(close_btn)
 	close_btn.grab_focus()
 
@@ -896,6 +930,7 @@ func show_resident_dialogue(res_data: Dictionary, on_escort_started: Callable) -
 		active_modal_layer = null
 		on_escort_started.call()
 	)
+	UIFeedback.attach(escort_btn, Color("#80D8FF"))
 	card.add_child(escort_btn)
 	escort_btn.grab_focus()
 
@@ -1006,6 +1041,7 @@ func toggle_info_panel(kind: String) -> void:
 	close_button.position = Vector2(250, 460)
 	close_button.size = Vector2(220, 48)
 	close_button.pressed.connect(close_info_panel)
+	UIFeedback.attach(close_button, Color("#F4B860"))
 	card.add_child(close_button)
 	close_button.grab_focus()
 
