@@ -115,82 +115,85 @@ func _process(delta: float) -> void:
 		_update_timer_display()
 
 func _build_ui() -> void:
-	# 1. Top Operations Bar
+	# 1. Command bar
 	var top_panel := Panel.new()
 	top_panel.position = Vector2(16, 12)
 	top_panel.size = Vector2(1248, 86)
 	var top_style := StyleBoxFlat.new()
-	top_style.bg_color = Color("#091827", 0.95)
-	top_style.border_color = Color("#F4B860")
-	top_style.set_border_width_all(2)
-	top_style.set_corner_radius_all(8)
+	top_style.bg_color = Color("#09151F", 0.97)
+	top_style.border_color = Color("#293D49")
+	top_style.set_border_width_all(1)
+	top_style.border_width_left = 3
+	top_style.set_corner_radius_all(9)
 	top_panel.add_theme_stylebox_override("panel", top_style)
 	add_child(top_panel)
+
+	var top_accent := ColorRect.new()
+	top_accent.position = Vector2(0, 13)
+	top_accent.size = Vector2(3, 60)
+	top_accent.color = Color("#D7AA57")
+	top_panel.add_child(top_accent)
 	
-	# Title & Disaster
+	# Mission identity and objective
 	title_label = Label.new()
-	title_label.position = Vector2(20, 10)
-	title_label.size = Vector2(440, 24)
-	title_label.text = "MISSION: " + mission_title.to_upper() + "  [" + disaster_name + "]"
-	title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	title_label.clip_text = false
-	title_label.add_theme_font_size_override("font_size", 15)
-	title_label.add_theme_color_override("font_color", Color("#F4B860"))
+	title_label.position = Vector2(20, 8)
+	title_label.size = Vector2(460, 22)
+	title_label.text = mission_title.to_upper() + "  /  " + disaster_name
+	title_label.clip_text = true
+	title_label.add_theme_font_size_override("font_size", 14)
+	title_label.add_theme_color_override("font_color", Color("#E8C66A"))
 	top_panel.add_child(title_label)
 	
-	# Primary Objective
 	obj_primary_label = Label.new()
 	obj_primary_label.position = Vector2(20, 34)
-	obj_primary_label.size = Vector2(530, 22)
-	obj_primary_label.text = "▶ OBJECTIVE: " + primary_objective
-	obj_primary_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	obj_primary_label.clip_text = false
-	obj_primary_label.add_theme_font_size_override("font_size", 13)
-	obj_primary_label.add_theme_color_override("font_color", Color("#FFFFFF"))
+	obj_primary_label.size = Vector2(460, 22)
+	obj_primary_label.text = _objective_preview()
+	obj_primary_label.clip_text = true
+	obj_primary_label.add_theme_font_size_override("font_size", 12)
+	obj_primary_label.add_theme_color_override("font_color", Color("#D4DEE3"))
 	top_panel.add_child(obj_primary_label)
 	
-	# Emergency Status Badge
 	status_badge = Label.new()
-	status_badge.position = Vector2(20, 58)
-	status_badge.size = Vector2(400, 20)
-	status_badge.text = "● STATUS: " + status_text
+	status_badge.position = Vector2(20, 61)
+	status_badge.size = Vector2(450, 16)
+	status_badge.text = "●  " + status_text
 	status_badge.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	status_badge.clip_text = false
-	status_badge.add_theme_font_size_override("font_size", 12)
+	status_badge.clip_text = true
+	status_badge.add_theme_font_size_override("font_size", 10)
 	status_badge.add_theme_color_override("font_color", status_color)
 	top_panel.add_child(status_badge)
 	
-	# Telemetry Checklist counters
+	# Mission telemetry
 	var telemetry_box := HBoxContainer.new()
-	telemetry_box.position = Vector2(520, 12)
-	telemetry_box.size = Vector2(360, 32)
-	telemetry_box.add_theme_constant_override("separation", 16)
+	telemetry_box.position = Vector2(505, 15)
+	telemetry_box.size = Vector2(380, 28)
+	telemetry_box.add_theme_constant_override("separation", 13)
 	top_panel.add_child(telemetry_box)
 	
 	obj_hazards_label = Label.new()
-	obj_hazards_label.text = "Hazards: 0/3"
-	obj_hazards_label.add_theme_font_size_override("font_size", 13)
-	obj_hazards_label.add_theme_color_override("font_color", Color("#E2E8F0"))
+	obj_hazards_label.text = "HAZARDS  0/3"
+	obj_hazards_label.add_theme_font_size_override("font_size", 11)
+	obj_hazards_label.add_theme_color_override("font_color", Color("#C7D3D9"))
 	telemetry_box.add_child(obj_hazards_label)
 	
 	obj_residents_label = Label.new()
-	obj_residents_label.text = "Rescued: 0/2"
-	obj_residents_label.add_theme_font_size_override("font_size", 13)
-	obj_residents_label.add_theme_color_override("font_color", Color("#E2E8F0"))
+	obj_residents_label.text = "RESCUED  0/2"
+	obj_residents_label.add_theme_font_size_override("font_size", 11)
+	obj_residents_label.add_theme_color_override("font_color", Color("#C7D3D9"))
 	telemetry_box.add_child(obj_residents_label)
 	
 	score_label = Label.new()
-	score_label.text = "Score: 1000"
-	score_label.add_theme_font_size_override("font_size", 13)
-	score_label.add_theme_color_override("font_color", Color("#F4B860"))
+	score_label.text = "SCORE  1000"
+	score_label.add_theme_font_size_override("font_size", 11)
+	score_label.add_theme_color_override("font_color", Color("#E8C66A"))
 	telemetry_box.add_child(score_label)
 	
-	# Tactical Scan button
 	scan_btn = Button.new()
-	scan_btn.text = "[TAB] SCAN"
-	scan_btn.position = Vector2(770, 48)
-	scan_btn.size = Vector2(105, 28)
+	scan_btn.text = "SCAN  [TAB]"
+	scan_btn.position = Vector2(770, 49)
+	scan_btn.size = Vector2(112, 28)
 	scan_btn.add_theme_font_size_override("font_size", 11)
+	_style_hud_button(scan_btn)
 	scan_btn.pressed.connect(func():
 		Campaign.tactical_scan_active = !Campaign.tactical_scan_active
 		_update_scan_button_visual()
@@ -198,34 +201,43 @@ func _build_ui() -> void:
 	top_panel.add_child(scan_btn)
 	_update_scan_button_visual()
 	
-	# Emergency Countdown Timer
+	var timer_caption := Label.new()
+	timer_caption.position = Vector2(891, 8)
+	timer_caption.size = Vector2(112, 15)
+	timer_caption.text = "TIME REMAINING"
+	timer_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	timer_caption.add_theme_font_size_override("font_size", 9)
+	timer_caption.add_theme_color_override("font_color", Color("#8FA3AE"))
+	top_panel.add_child(timer_caption)
+
 	timer_label = Label.new()
-	timer_label.position = Vector2(885, 8)
-	timer_label.size = Vector2(110, 36)
+	timer_label.position = Vector2(891, 22)
+	timer_label.size = Vector2(112, 38)
 	timer_label.text = "10:00"
 	timer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	timer_label.add_theme_font_size_override("font_size", 26)
-	timer_label.add_theme_color_override("font_color", Color("#FF5252"))
+	timer_label.add_theme_color_override("font_color", Color("#E8C66A"))
 	top_panel.add_child(timer_label)
 	
-	# TOP-RIGHT QUICK UTILITY BAR: [SOUND] [RESTART] [PAUSE]
 	var quick_bar := HBoxContainer.new()
-	quick_bar.position = Vector2(995, 48)
-	quick_bar.size = Vector2(235, 28)
-	quick_bar.add_theme_constant_override("separation", 6)
+	quick_bar.position = Vector2(1012, 49)
+	quick_bar.size = Vector2(220, 28)
+	quick_bar.add_theme_constant_override("separation", 5)
 	top_panel.add_child(quick_bar)
 	
 	mute_btn = Button.new()
 	_update_mute_button_visual()
 	mute_btn.custom_minimum_size = Vector2(72, 28)
 	mute_btn.add_theme_font_size_override("font_size", 11)
+	_style_hud_button(mute_btn, Color("#80D8FF"))
 	mute_btn.pressed.connect(toggle_sound)
 	quick_bar.add_child(mute_btn)
 	
 	var restart_btn := Button.new()
-	restart_btn.text = "↻ RESTART"
+	restart_btn.text = "RESTART"
 	restart_btn.custom_minimum_size = Vector2(75, 28)
 	restart_btn.add_theme_font_size_override("font_size", 11)
+	_style_hud_button(restart_btn)
 	restart_btn.pressed.connect(func():
 		SoundManager.play_ui_click()
 		restart_requested.emit()
@@ -233,64 +245,73 @@ func _build_ui() -> void:
 	quick_bar.add_child(restart_btn)
 	
 	var pause_btn := Button.new()
-	pause_btn.text = "⏸ PAUSE"
+	pause_btn.text = "PAUSE"
 	pause_btn.custom_minimum_size = Vector2(72, 28)
 	pause_btn.add_theme_font_size_override("font_size", 11)
+	_style_hud_button(pause_btn, Color("#80D8FF"))
 	pause_btn.pressed.connect(func():
 		SoundManager.play_ui_click()
 		show_pause_menu()
 	)
 	quick_bar.add_child(pause_btn)
 	
-	# 2. Bottom Inventory Bar
+	# 2. Field kit
 	var inv_panel := Panel.new()
-	inv_panel.position = Vector2(20, 630)
-	inv_panel.size = Vector2(490, 75)
+	inv_panel.position = Vector2(20, 625)
+	inv_panel.size = Vector2(440, 80)
 	var inv_style := StyleBoxFlat.new()
-	inv_style.bg_color = Color("#091827", 0.94)
-	inv_style.border_color = Color("#2C4257")
-	inv_style.set_border_width_all(2)
-	inv_style.set_corner_radius_all(8)
+	inv_style.bg_color = Color("#09151F", 0.96)
+	inv_style.border_color = Color("#293D49")
+	inv_style.set_border_width_all(1)
+	inv_style.set_corner_radius_all(9)
 	inv_panel.add_theme_stylebox_override("panel", inv_style)
 	add_child(inv_panel)
 	
 	var inv_title := Label.new()
-	inv_title.position = Vector2(14, 6)
-	inv_title.size = Vector2(300, 18)
-	inv_title.text = "EMERGENCY GO-BAG SLOTS:"
-	inv_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	inv_title.clip_text = false
-	inv_title.add_theme_font_size_override("font_size", 11)
-	inv_title.add_theme_color_override("font_color", Color("#94A3B8"))
+	inv_title.position = Vector2(12, 5)
+	inv_title.size = Vector2(300, 16)
+	inv_title.text = "FIELD KIT"
+	inv_title.add_theme_font_size_override("font_size", 10)
+	inv_title.add_theme_color_override("font_color", Color("#9BB2BD"))
 	inv_panel.add_child(inv_title)
 	
 	inventory_box = HBoxContainer.new()
-	inventory_box.position = Vector2(12, 26)
-	inventory_box.size = Vector2(466, 42)
-	inventory_box.add_theme_constant_override("separation", 8)
+	inventory_box.position = Vector2(12, 24)
+	inventory_box.size = Vector2(416, 44)
+	inventory_box.add_theme_constant_override("separation", 7)
 	inv_panel.add_child(inventory_box)
 	_render_inventory_slots()
 	
-	# 3. Center Bottom Interaction Prompt
+	# 3. Interaction prompt and control legend
 	prompt_panel = PanelContainer.new()
-	prompt_panel.position = Vector2(440, 642)
-	prompt_panel.size = Vector2(400, 48)
+	prompt_panel.position = Vector2(475, 641)
+	prompt_panel.size = Vector2(330, 46)
 	var p_style := StyleBoxFlat.new()
-	p_style.bg_color = Color("#102538", 0.95)
-	p_style.border_color = Color("#F4B860")
-	p_style.set_border_width_all(2)
-	p_style.set_corner_radius_all(8)
+	p_style.bg_color = Color("#0B1822", 0.97)
+	p_style.border_color = Color("#D7AA57")
+	p_style.set_border_width_all(1)
+	p_style.border_width_left = 3
+	p_style.set_corner_radius_all(7)
 	prompt_panel.add_theme_stylebox_override("panel", p_style)
 	add_child(prompt_panel)
 	
 	prompt_label = Label.new()
-	prompt_label.text = "[E] INTERACT"
+	prompt_label.text = "[E]  INTERACT"
 	prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	prompt_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	prompt_label.add_theme_font_size_override("font_size", 16)
-	prompt_label.add_theme_color_override("font_color", Color("#F4B860"))
+	prompt_label.add_theme_font_size_override("font_size", 13)
+	prompt_label.add_theme_color_override("font_color", Color("#E8C66A"))
 	prompt_panel.add_child(prompt_label)
 	prompt_panel.visible = false
+
+	var controls_hint := Label.new()
+	controls_hint.position = Vector2(830, 654)
+	controls_hint.size = Vector2(420, 20)
+	controls_hint.text = "WASD MOVE   •   E INTERACT   •   J OBJECTIVES   •   ESC PAUSE"
+	controls_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	controls_hint.add_theme_font_size_override("font_size", 9)
+	controls_hint.add_theme_color_override("font_color", Color("#81949E"))
+	add_child(controls_hint)
 	
 	# 4. Guide Compass Pointer (Top Right)
 	guide_arrow = Control.new()
@@ -304,42 +325,70 @@ func toggle_sound() -> void:
 	_update_mute_button_visual()
 	SoundManager.play_ui_click()
 
+func _style_hud_button(button: Button, accent: Color = Color("#D7AA57")) -> void:
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = Color("#10212C")
+	normal.border_color = Color("#2A414D")
+	normal.set_border_width_all(1)
+	normal.set_corner_radius_all(5)
+	button.add_theme_stylebox_override("normal", normal)
+
+	var hover := normal.duplicate() as StyleBoxFlat
+	hover.bg_color = Color("#17303E")
+	hover.border_color = accent
+	hover.border_width_left = 3
+	button.add_theme_stylebox_override("hover", hover)
+	button.add_theme_stylebox_override("focus", hover)
+
+	var pressed := normal.duplicate() as StyleBoxFlat
+	pressed.bg_color = Color("#223A47")
+	pressed.border_color = accent
+	button.add_theme_stylebox_override("pressed", pressed)
+	button.add_theme_color_override("font_color", Color("#C7D3D9"))
+	button.add_theme_color_override("font_hover_color", accent)
+	button.add_theme_color_override("font_focus_color", accent)
+
 func _update_mute_button_visual() -> void:
 	if is_instance_valid(mute_btn):
 		if Campaign.sound_enabled:
-			mute_btn.text = "🔊 ON [M]"
-			mute_btn.remove_theme_color_override("font_color")
+			mute_btn.text = "SOUND ON"
+			mute_btn.add_theme_color_override("font_color", Color("#C7D3D9"))
 		else:
-			mute_btn.text = "🔇 MUTE [M]"
+			mute_btn.text = "MUTED"
 			mute_btn.add_theme_color_override("font_color", Color("#FF6B6B"))
 
 func _update_scan_button_visual() -> void:
 	if is_instance_valid(scan_btn):
 		if Campaign.tactical_scan_active:
-			scan_btn.text = "[TAB] ON"
+			scan_btn.text = "SCAN ON"
 			scan_btn.add_theme_color_override("font_color", Color("#2ECC71"))
 		else:
-			scan_btn.text = "[TAB] SCAN"
-			scan_btn.remove_theme_color_override("font_color")
+			scan_btn.text = "SCAN  [TAB]"
+			scan_btn.add_theme_color_override("font_color", Color("#C7D3D9"))
 
 func _update_timer_display() -> void:
 	var mins := int(time_remaining) / 60
 	var secs := int(time_remaining) % 60
 	timer_label.text = "%02d:%02d" % [mins, secs]
-	if time_remaining < 60.0:
-		timer_label.add_theme_color_override("font_color", Color("#FF1744") if fmod(time_remaining, 0.6) > 0.3 else Color.WHITE)
+	timer_label.add_theme_color_override("font_color", Color("#FF6B6B") if time_remaining < 60.0 else Color("#E8C66A"))
 
 func update_mission_info(m_title: String, disaster: String, obj: String) -> void:
 	mission_title = m_title
 	disaster_name = disaster
 	primary_objective = obj
-	title_label.text = "MISSION: " + mission_title.to_upper() + "  [" + disaster_name + "]"
-	obj_primary_label.text = "▶ OBJECTIVE: " + primary_objective
+	title_label.text = mission_title.to_upper() + "  /  " + disaster_name
+	obj_primary_label.text = _objective_preview()
+
+func _objective_preview() -> String:
+	var preview := primary_objective.left(58)
+	if primary_objective.length() > preview.length():
+		preview += "..."
+	return "OBJECTIVE  /  " + preview
 
 func update_status(text: String, color: Color = Color("#F4B860")) -> void:
 	status_text = text
 	status_color = color
-	status_badge.text = "● STATUS: " + status_text
+	status_badge.text = "●  " + status_text
 	status_badge.add_theme_color_override("font_color", status_color)
 
 func update_counters(hazards: int, req_hazards: int, residents: int, req_residents: int, sup_count: int, _req_sup: int) -> void:
@@ -348,18 +397,15 @@ func update_counters(hazards: int, req_hazards: int, residents: int, req_residen
 	residents_count = residents
 	residents_required = req_residents
 	
-	obj_hazards_label.text = "Hazards: %d/%d" % [hazards, req_hazards]
-	obj_residents_label.text = "Rescued: %d/%d" % [residents, req_residents]
-	
-	if hazards >= req_hazards:
-		obj_hazards_label.add_theme_color_override("font_color", Color("#2ECC71"))
-	if residents >= req_residents:
-		obj_residents_label.add_theme_color_override("font_color", Color("#2ECC71"))
+	obj_hazards_label.text = "HAZARDS  %d/%d" % [hazards, req_hazards]
+	obj_residents_label.text = "RESCUED  %d/%d" % [residents, req_residents]
+	obj_hazards_label.add_theme_color_override("font_color", Color("#86D7B3") if hazards >= req_hazards else Color("#C7D3D9"))
+	obj_residents_label.add_theme_color_override("font_color", Color("#86D7B3") if residents >= req_residents else Color("#C7D3D9"))
 
 func update_score_display(sc: int) -> void:
 	current_score = sc
 	if is_instance_valid(score_label):
-		score_label.text = "Score: %d" % sc
+		score_label.text = "SCORE  %d" % sc
 
 func add_supply_item(item: Dictionary) -> void:
 	supplies.append(item)
@@ -371,7 +417,7 @@ func _render_inventory_slots() -> void:
 		
 	for i in range(max_supplies):
 		var slot := Panel.new()
-		slot.custom_minimum_size = Vector2(108, 38)
+		slot.custom_minimum_size = Vector2(96, 38)
 		var s_style := StyleBoxFlat.new()
 		s_style.set_corner_radius_all(6)
 		
@@ -392,7 +438,7 @@ func _render_inventory_slots() -> void:
 			var lbl := Label.new()
 			lbl.text = supplies[i].get("name", "Item")
 			lbl.position = Vector2(24, 4)
-			lbl.size = Vector2(80, 30)
+			lbl.size = Vector2(66, 30)
 			lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			lbl.clip_text = false
 			lbl.add_theme_font_size_override("font_size", 10)
@@ -407,7 +453,7 @@ func _render_inventory_slots() -> void:
 			var lbl := Label.new()
 			lbl.text = "EMPTY"
 			lbl.position = Vector2(24, 10)
-			lbl.size = Vector2(80, 20)
+			lbl.size = Vector2(66, 20)
 			lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			lbl.add_theme_font_size_override("font_size", 10)
 			lbl.add_theme_color_override("font_color", Color("#4A5568"))

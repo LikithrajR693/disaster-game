@@ -86,85 +86,182 @@ func _build_ui() -> void:
 	vignette.draw.connect(func(): _draw_vignette(vignette))
 	add_child(vignette)
 	
-	# 6. Title Header & Sector Badge
-	var header_box := VBoxContainer.new()
-	header_box.position = Vector2(240, 50)
-	header_box.size = Vector2(800, 150)
-	header_box.add_theme_constant_override("separation", 6)
-	add_child(header_box)
-	
+	# 6. Incident identity and campaign briefing
+	var overline := Label.new()
+	overline.position = Vector2(82, 72)
+	overline.size = Vector2(700, 24)
+	overline.text = "AARANYA DISTRICT  /  EMERGENCY RESPONSE NETWORK"
+	overline.add_theme_font_size_override("font_size", 12)
+	overline.add_theme_color_override("font_color", Color("#9BB2BD"))
+	add_child(overline)
+
+	var network_status := Label.new()
+	network_status.position = Vector2(1040, 72)
+	network_status.size = Vector2(165, 24)
+	network_status.text = "●  SIMULATION READY"
+	network_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	network_status.add_theme_font_size_override("font_size", 11)
+	network_status.add_theme_color_override("font_color", Color("#86D7B3"))
+	add_child(network_status)
+
 	var title_lbl := Label.new()
+	title_lbl.position = Vector2(76, 158)
+	title_lbl.size = Vector2(730, 78)
 	title_lbl.text = "READY OR NOT"
-	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title_lbl.add_theme_font_size_override("font_size", 52)
+	title_lbl.add_theme_font_size_override("font_size", 62)
 	title_lbl.add_theme_color_override("font_color", Color("#F4B860"))
-	header_box.add_child(title_lbl)
-	
-	# Horizontal seismic pulse line underneath title
-	var pulse_line := Control.new()
-	pulse_line.custom_minimum_size = Vector2(800, 16)
-	pulse_line.draw.connect(func(): _draw_seismic_pulse_line(pulse_line))
-	header_box.add_child(pulse_line)
-	
-	var subtitle_badge := Label.new()
-	subtitle_badge.text = "NDMA DOCTRINE SIMULATION // SECTOR: AARANYA // STATUS: CRITICAL"
-	subtitle_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	subtitle_badge.add_theme_font_size_override("font_size", 13)
-	subtitle_badge.add_theme_color_override("font_color", Color("#38BDF8"))
-	header_box.add_child(subtitle_badge)
-	
-	# 7. Glassmorphic Tactical Menu Card (Tightly wraps buttons, no empty bottom padding)
+	add_child(title_lbl)
+
+	var subtitle := Label.new()
+	subtitle.position = Vector2(82, 238)
+	subtitle.size = Vector2(700, 38)
+	subtitle.text = "THE LAST 10 MINUTES"
+	subtitle.add_theme_font_size_override("font_size", 23)
+	subtitle.add_theme_color_override("font_color", Color("#E6EDF0"))
+	add_child(subtitle)
+
+	var description := Label.new()
+	description.position = Vector2(84, 293)
+	description.size = Vector2(660, 62)
+	description.text = "A town in crisis. Every decision matters.\nLead your community to safety."
+	description.add_theme_font_size_override("font_size", 17)
+	description.add_theme_color_override("font_color", Color("#B4C3CA"))
+	add_child(description)
+
+	var briefing := Panel.new()
+	briefing.position = Vector2(82, 420)
+	briefing.size = Vector2(700, 126)
+	var briefing_style := StyleBoxFlat.new()
+	briefing_style.bg_color = Color("#0B1822", 0.91)
+	briefing_style.border_color = Color("#344955")
+	briefing_style.set_border_width_all(1)
+	briefing_style.border_width_left = 3
+	briefing_style.set_corner_radius_all(8)
+	briefing_style.content_margin_left = 20
+	briefing.add_theme_stylebox_override("panel", briefing_style)
+	add_child(briefing)
+
+	var briefing_kicker := Label.new()
+	briefing_kicker.position = Vector2(22, 14)
+	briefing_kicker.size = Vector2(640, 20)
+	briefing_kicker.add_theme_font_size_override("font_size", 11)
+	briefing_kicker.add_theme_color_override("font_color", Color("#E8C66A"))
+	briefing.add_child(briefing_kicker)
+
+	var operation_id := Campaign.MISSION_METADATA.size() - 1
+	var operation_available := false
+	for index in range(Campaign.MISSION_METADATA.size()):
+		if Campaign.unlocked[index] and not Campaign.completed[index]:
+			operation_id = index
+			operation_available = true
+			break
+	var operation: Dictionary = Campaign.MISSION_METADATA[operation_id]
+	briefing_kicker.text = ("NEXT OPERATION     /     " + str(operation["act"])) if operation_available else "CAMPAIGN RECORD     /     ALL OPERATIONS COMPLETE"
+
+	var briefing_title := Label.new()
+	briefing_title.position = Vector2(22, 40)
+	briefing_title.size = Vector2(640, 30)
+	briefing_title.text = operation["title"]
+	briefing_title.add_theme_font_size_override("font_size", 20)
+	briefing_title.add_theme_color_override("font_color", Color("#F0F4F5"))
+	briefing.add_child(briefing_title)
+
+	var briefing_details := Label.new()
+	briefing_details.position = Vector2(22, 78)
+	briefing_details.size = Vector2(650, 22)
+	briefing_details.text = "%s     •     %s     •     %d MIN RESPONSE WINDOW" % [
+		operation["disaster"], operation["location"], int(int(operation["time_limit"]) / 60)
+	]
+	briefing_details.add_theme_font_size_override("font_size", 10)
+	briefing_details.add_theme_color_override("font_color", Color("#9BB2BD"))
+	briefing.add_child(briefing_details)
+
+	var control_hint := Label.new()
+	control_hint.position = Vector2(84, 624)
+	control_hint.size = Vector2(700, 22)
+	control_hint.text = "ARROW KEYS  NAVIGATE     •     ENTER  SELECT     •     ESC  BACK"
+	control_hint.add_theme_font_size_override("font_size", 11)
+	control_hint.add_theme_color_override("font_color", Color("#81949E"))
+	add_child(control_hint)
+
+	# 7. Field operations panel
 	menu_panel = PanelContainer.new()
-	menu_panel.position = Vector2(450, 230)
-	menu_panel.size = Vector2(380, 390)
+	menu_panel.position = Vector2(850, 165)
+	menu_panel.size = Vector2(356, 420)
 	var card_style := StyleBoxFlat.new()
-	card_style.bg_color = Color(0.05, 0.08, 0.13, 0.88)
-	card_style.border_color = Color("#F4B860")
-	card_style.set_border_width_all(2)
+	card_style.bg_color = Color("#0A1721", 0.96)
+	card_style.border_color = Color("#344955")
+	card_style.set_border_width_all(1)
+	card_style.border_width_top = 3
 	card_style.set_corner_radius_all(10)
-	card_style.content_margin_left = 24
-	card_style.content_margin_right = 24
-	card_style.content_margin_top = 22
-	card_style.content_margin_bottom = 22
+	card_style.content_margin_left = 22
+	card_style.content_margin_right = 22
+	card_style.content_margin_top = 20
+	card_style.content_margin_bottom = 18
 	menu_panel.add_theme_stylebox_override("panel", card_style)
 	add_child(menu_panel)
 	
 	var menu_vbox := VBoxContainer.new()
-	menu_vbox.add_theme_constant_override("separation", 14)
+	menu_vbox.add_theme_constant_override("separation", 9)
 	menu_panel.add_child(menu_vbox)
-	
-	_create_tactical_button(menu_vbox, "NEW CAMPAIGN", _on_new_campaign)
+
+	var menu_heading := Label.new()
+	menu_heading.text = "FIELD OPERATIONS"
+	menu_heading.add_theme_font_size_override("font_size", 19)
+	menu_heading.add_theme_color_override("font_color", Color("#EDF3F5"))
+	menu_vbox.add_child(menu_heading)
+
+	var menu_subheading := Label.new()
+	menu_subheading.text = "SELECT YOUR NEXT ACTION"
+	menu_subheading.add_theme_font_size_override("font_size", 10)
+	menu_subheading.add_theme_color_override("font_color", Color("#81949E"))
+	menu_vbox.add_child(menu_subheading)
+
+	_create_tactical_button(menu_vbox, "DEPLOY CAMPAIGN", _on_new_campaign)
 	_create_tactical_button(menu_vbox, "MISSION SELECT", _on_mission_select)
 	_create_tactical_button(menu_vbox, "PREPAREDNESS HANDBOOK", _on_handbook)
-	_create_tactical_button(menu_vbox, "SETTINGS", _on_settings)
+	_create_tactical_button(menu_vbox, "SYSTEM SETTINGS", _on_settings)
 	_create_tactical_button(menu_vbox, "EXIT TO DESKTOP", _on_exit)
+
+	var menu_divider := HSeparator.new()
+	menu_divider.custom_minimum_size = Vector2(0, 1)
+	menu_vbox.add_child(menu_divider)
+
+	var menu_footer := Label.new()
+	menu_footer.text = "OFFLINE TRAINING SIMULATION"
+	menu_footer.add_theme_font_size_override("font_size", 9)
+	menu_footer.add_theme_color_override("font_color", Color("#718590"))
+	menu_vbox.add_child(menu_footer)
+	buttons[0].grab_focus()
 
 func _create_tactical_button(parent: Node, text: String, callback: Callable) -> Button:
 	var btn := Button.new()
 	btn.text = text
-	btn.custom_minimum_size = Vector2(332, 46)
+	btn.custom_minimum_size = Vector2(300, 44)
 	btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	btn.add_theme_font_size_override("font_size", 15)
+	btn.add_theme_font_size_override("font_size", 13)
 	
 	var normal_style := StyleBoxFlat.new()
-	normal_style.bg_color = Color("#0A1926", 0.90)
-	normal_style.border_color = Color("#26465B")
+	var is_primary := buttons.is_empty()
+	normal_style.bg_color = Color("#D7AA57") if is_primary else Color("#0D1E29")
+	normal_style.border_color = Color("#D7AA57") if is_primary else Color("#2A414D")
 	normal_style.set_border_width_all(1)
-	normal_style.set_corner_radius_all(6)
-	normal_style.content_margin_left = 18
+	normal_style.set_corner_radius_all(5)
+	normal_style.content_margin_left = 14
 	btn.add_theme_stylebox_override("normal", normal_style)
 	
 	var hover_style := StyleBoxFlat.new()
-	hover_style.bg_color = Color("#122A3E", 0.95)
-	hover_style.border_color = Color("#F4B860")
+	hover_style.bg_color = Color("#E7BD70") if is_primary else Color("#142B38")
+	hover_style.border_color = Color("#F4B860") if is_primary else Color("#73909D")
 	hover_style.set_border_width_all(1)
-	hover_style.border_width_left = 6
-	hover_style.set_corner_radius_all(6)
-	hover_style.content_margin_left = 24 # +6px smooth slide feel
+	hover_style.border_width_left = 4
+	hover_style.set_corner_radius_all(5)
+	hover_style.content_margin_left = 19
 	btn.add_theme_stylebox_override("hover", hover_style)
 	btn.add_theme_stylebox_override("focus", hover_style)
-	btn.add_theme_color_override("font_hover_color", Color("#F4B860"))
-	btn.add_theme_color_override("font_focus_color", Color("#F4B860"))
+	btn.add_theme_color_override("font_color", Color("#17222A") if is_primary else Color("#D8E2E6"))
+	btn.add_theme_color_override("font_hover_color", Color("#111C22") if is_primary else Color("#F4B860"))
+	btn.add_theme_color_override("font_focus_color", Color("#111C22") if is_primary else Color("#F4B860"))
 	
 	btn.mouse_entered.connect(func(): SoundManager.play_ui_hover())
 	btn.pressed.connect(func():
@@ -201,11 +298,11 @@ func _draw_live_backdrop() -> void:
 	var b2_x: float = 780 - offset_x * 0.25
 	_draw_bg_building(Rect2(b2_x, 170, 360, 190), "PRIMARY HEALTH CLINIC", Color("#182329"), Color("#00695C"))
 	
-	# Flickering yellow streetlamps along road
+	# Warm streetlamps with a subtle, time-based flicker
 	for i in range(5):
 		var lx: float = i * 320 - offset_x * 0.4
 		var ly: float = road_y - 15.0
-		var flicker := randf_range(0.85, 1.0)
+		var flicker := 0.9 + 0.1 * sin(pulse_line_clock * (2.1 + i * 0.13) + i)
 		live_backdrop.draw_circle(Vector2(lx, ly), 55.0, Color(1.0, 0.85, 0.4, 0.08 * flicker))
 		live_backdrop.draw_circle(Vector2(lx, ly), 5.0, Color("#F4B860"))
 		live_backdrop.draw_line(Vector2(lx, ly), Vector2(lx, ly + 25), Color("#334155"), 3.0)
@@ -256,17 +353,9 @@ func _draw_seismic_pulse_line(node: Control) -> void:
 		node.draw_line(pts[i], pts[i + 1], Color("#F4B860", 0.75), 2.0)
 
 func _draw_caution_stripe(node: Control, height: float) -> void:
-	var w := 1280.0
-	var stripe_w := 24.0
-	var offset := fmod(camera_drift_x * 0.5, stripe_w * 2.0)
-	var x := -stripe_w * 2.0 + offset
-	while x < w + stripe_w * 2.0:
-		var pts: PackedVector2Array = [
-			Vector2(x, 0), Vector2(x + stripe_w, 0),
-			Vector2(x + stripe_w - 6, height), Vector2(x - 6, height)
-		]
-		node.draw_colored_polygon(pts, Color("#F59E0B", 0.85))
-		x += stripe_w * 2.0
+	var center_y := height * 0.5
+	node.draw_rect(Rect2(0, center_y, 1280, 1), Color("#324550", 0.85))
+	node.draw_rect(Rect2(0, center_y - 1, 112, 2), Color("#D7AA57", 0.9))
 
 func _draw_vignette(node: Control) -> void:
 	# Subtle dark radial edge vignette
