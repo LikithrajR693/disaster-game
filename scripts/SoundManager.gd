@@ -83,8 +83,8 @@ func _feed_ambience_buffer() -> void:
 		return
 	var dt := 1.0 / AMB_SR
 	var ducked := get_tree().paused or Engine.time_scale < 0.5
-	var cutoff := GameConfig.AMBIENCE_DUCKED_CUTOFF if ducked else GameConfig.AMBIENCE_NORMAL_CUTOFF
-	var lowpass_alpha := 1.0 - exp(-TAU * cutoff / AMB_SR)
+	var ambience_cutoff := GameConfig.AMBIENCE_DUCKED_CUTOFF if ducked else GameConfig.AMBIENCE_NORMAL_CUTOFF
+	var lowpass_alpha := 1.0 - exp(-TAU * ambience_cutoff / AMB_SR)
 	var lfo := 0.5 + 0.5 * sin(_ambience_time * TAU * 0.12 + 1.3 * sin(_ambience_time * 0.31))
 	var cutoff := lerpf(350.0, 900.0, lfo)
 	var svf_f := 2.0 * sin(PI * cutoff / AMB_SR)
